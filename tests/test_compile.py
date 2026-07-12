@@ -91,6 +91,36 @@ target: "Always use tabs, never spaces."
 
 Suppress the annoying tabs rule.
 """)
+        write(patterns / "accepted-observed.md", """---
+name: accepted-observed
+type: feedback
+state: observed
+occurrences: 1
+decision: accepted
+applies_to:
+  tool: "*"
+  glob: "**/*"
+  project: "*"
+target: null
+---
+
+Accepted despite only being observed once.
+""")
+        write(patterns / "rejected-proven.md", """---
+name: rejected-proven
+type: feedback
+state: proven
+occurrences: 9
+decision: rejected
+applies_to:
+  tool: "*"
+  glob: "**/*"
+  project: "*"
+target: null
+---
+
+Rejected even though it reached proven.
+""")
         write(patterns / "script-breakout.md", """---
 name: script-breakout
 type: feedback
@@ -116,6 +146,8 @@ Mentions a literal </script> tag in prose, which must not break index.html.
         assert "Use uv for python scripts" in agents, "proven pattern missing from AGENTS.md"
         assert "Should never appear" not in agents, "observed pattern leaked into compiled output"
         assert "Should not leak" not in agents, "out-of-scope project pattern leaked in"
+        assert "Accepted despite only being observed" in agents, "decision:accepted should compile even at observed"
+        assert "Rejected even though it reached proven" not in agents, "decision:rejected must never compile"
 
         claude = Path("CLAUDE.md").read_text()
         assert "Always use tabs, never spaces." not in claude, "override did not remove target text"
@@ -129,9 +161,12 @@ Mentions a literal </script> tag in prose, which must not break index.html.
         index_json = json.loads((Path(home) / "patterns" / "index.json").read_text())
         assert {p["name"] for p in index_json} == {
             "proven-one", "observed-one", "scoped-elsewhere", "override-one", "script-breakout",
-        }, "index.json should include every pattern regardless of state or project scope"
+            "accepted-observed", "rejected-proven",
+        }, "index.json should include every pattern regardless of state, decision, or project scope"
         assert next(p for p in index_json if p["name"] == "proven-one")["cluster"] == "tooling", \
             "cluster field should pass through to index.json"
+        assert next(p for p in index_json if p["name"] == "rejected-proven")["decision"] == "rejected", \
+            "decision field should pass through to index.json"
 
         index_html = (Path(home) / "patterns" / "index.html").read_text()
         assert "__PATTERNITY_DATA__" not in index_html, "template placeholder was not substituted"

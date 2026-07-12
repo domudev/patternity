@@ -20,9 +20,10 @@ of file live there:
 ---
 name: kebab-case-slug          # unique, becomes the filename stem
 type: user | feedback | project | reference | override
-state: observed | suspect | proven   # compile.py only reads proven
+state: observed | suspect | proven   # automatic, occurrence-driven
 occurrences: 1
 cluster: tooling | code-style | workflow | communication | testing | ...
+decision: accepted | rejected        # optional manual override of `state`; omit for automatic
 applies_to:
   tool: "*" | claude | cursor | copilot     # "*" = all tools
   glob: "**/*"                              # file scope, tool-dependent
@@ -60,6 +61,24 @@ promoting a pattern in the same turn — that's what keeps CLAUDE.md/AGENTS.md/
 until someone remembers to re-run a script. The safety net is git history on
 the *compiled* files, not a pre-compile approval gate: every promotion is a
 visible, revertible diff.
+
+## Manual accept / reject (`decision`)
+
+The automatic ladder is the default, but the user can override it per
+pattern via `decision`:
+
+- `decision: accepted` — pin it as compiled regardless of occurrence count
+  (e.g. accept a still-`observed` pattern immediately). Never auto-demoted.
+- `decision: rejected` — tombstone it: never compiled, and the skill must
+  **not** re-propose or resurrect it (leave the file so it's remembered as
+  rejected; don't bump its `occurrences` or recreate it if the same signal
+  recurs). This is how a user says "stop suggesting this."
+- omitted (or `clear`ed) — back to the automatic occurrence-driven state.
+
+`decision` overrides `state` for compilation (`compile.py:is_effective_proven`).
+The visualization's accept/reject buttons don't write the store directly (it's
+a static page) — they emit a `scripts/decide.py accept:NAME reject:NAME`
+command that sets this field.
 
 ## Fine-grained scoping
 

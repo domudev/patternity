@@ -131,24 +131,47 @@ open ~/.patternity/patterns/index.html   # macOS; xdg-open on Linux
 
 `index.json` next to it is the same data in plain structured form, for
 anything else you want to build on top (a CLI summary, a different view).
-The board is dark-only (no light theme). Cards all share one neutral
-elevated surface — state is carried by a crisp accent (a glowing left bar,
-matching progress dots, and a tinted cluster chip), not a full-card wash,
-since low-opacity tints on a near-black surface read muddy. The accents run
-slate (observed) → amber (suspect) → green (proven), a progression from
-"barely sure" to "confident". `type: override` patterns get a small solid
-badge in a fourth reserved accent (violet), so it's never confused for a
-state. Occurrence count shows as three dots filled up to the pattern's
-count. Clicking a card (or Enter/Space when focused) opens a detail view
-with the full body text, not just the truncated first line — useful once a
-pattern's "why" runs longer than one line, or for reading an override's
-full suppressed-text target.
+The board is dark-only (no light theme), with near-square corners. Cards all
+share one neutral elevated surface — state is carried by a crisp accent (a
+glowing left bar, matching progress dots, and a tinted cluster chip), not a
+full-card wash, since low-opacity tints on a near-black surface read muddy.
+The accents run slate (observed) → amber (suspect) → green (proven), a
+progression from "barely sure" to "confident". `type: override` patterns get
+a small solid badge in a fourth reserved accent (violet), so it's never
+confused for a state — the app's four-wave logo is those same four accent
+colors. Occurrence count shows as three dots filled up to the pattern's
+count. Clicking a card (or Enter/Space when focused) opens a **bottom
+drawer** with the full body text, not just the truncated first line.
 
-The header title, column/profile headings, card/dialog titles, and cluster
-chips use Caveat (a handwriting webfont) as a one-off flourish; everything
-else read as data — body/"why" text, state and scope chips, occurrence
-counts — stays in Inter, a plain, small-size-legible sans. Both load from
-Google Fonts with a system-font fallback if offline.
+The logo, title, headings, card/drawer titles, and cluster chips use Caveat
+(a handwriting webfont) as a flourish; everything else read as data —
+body/"why" text, state and scope chips, occurrence counts — stays in Inter,
+a plain, small-size-legible sans. Both load from Google Fonts with a
+system-font fallback if offline.
+
+### Accept / reject
+
+Both `state` and `decision` live in the pattern's frontmatter in the store —
+nothing about a pattern is tracked only in the browser. `state` is the
+automatic occurrence-driven ladder; `decision` is your manual override.
+
+The board's hover buttons (✓ / ✕ on each card, or the buttons in the drawer)
+let you **accept** a pattern (pins it to Adopted / compiled regardless of
+count) or **reject** it (drops it to the collapsed "Rejected" tray;
+tombstoned, never compiled, and the skill won't re-propose it). Because the
+board is a static `file://` page it can't write the store directly, so your
+clicks stage a set of pending decisions and a bar appears with the exact
+command to persist them:
+
+```bash
+uv run <patternity-repo>/scripts/decide.py accept:uv-pref reject:tabs-not-spaces
+# then re-run compile.py to reflect it (or just ask your agent — the
+# patternity skill sets the same `decision` field)
+```
+
+`decide.py` writes the `decision` field into each pattern file in the store;
+the next `compile.py` honors it (`is_effective_proven`). Reopen a rejected
+card and clear it (`clear:name`) to hand it back to the automatic ladder.
 
 If `${PATTERNITY_HOME:-~/.patternity}/patterns/PROFILE.md` exists, it's
 rendered as a summary panel above the board — the skill's synthesis of
@@ -232,7 +255,7 @@ uv run /path/to/patternity/scripts/mine_git_history.py
 - `skills/patternity/SKILL.md` — canonical distillation/promotion logic
 - `commands/` — `/patternity-distill`, `/patternity-compile` slash commands
 - `hooks/` — shared capture hook wired into Claude Code, Cursor, and Copilot
-- `scripts/` — `mine_git_history.py`, `compile.py`, shared `_lib.py` parser (plain `uv run` scripts, no project/deps needed), plus `install.sh` (wires Cursor/Copilot into a target project) and `init_store.sh` (git-inits the personal pattern store)
+- `scripts/` — `mine_git_history.py`, `compile.py`, `decide.py` (apply accept/reject decisions), shared `_lib.py` parser (plain `uv run` scripts, no project/deps needed), plus `install.sh` (wires Cursor/Copilot into a target project) and `init_store.sh` (git-inits the personal pattern store)
 - `patterns/` — schema doc + reference example (the real store is `${PATTERNITY_HOME:-~/.patternity}/patterns/`)
 - `viz/template.html` — the visualization `compile.py` fills in and writes to the store as `index.html`
 - `.claude-plugin/` — `plugin.json` + `marketplace.json` so this repo installs directly via `/plugin marketplace add domudev/patternity`

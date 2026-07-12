@@ -38,10 +38,24 @@ def current_project() -> str:
     return Path.cwd().name
 
 
+def is_effective_proven(p: dict) -> bool:
+    """A pattern compiles if the user explicitly accepted it (pin, regardless
+    of occurrence count) or it reached `proven` on its own — but an explicit
+    reject always wins and excludes it. Manual accept/reject (set in the
+    frontmatter's `decision` field, e.g. via scripts/decide.py) overrides the
+    automatic occurrence-driven state."""
+    decision = p.get("decision", "")
+    if decision == "rejected":
+        return False
+    if decision == "accepted":
+        return True
+    return p.get("state") == "proven"
+
+
 def load_proven(project: str) -> tuple[list[dict], list[dict]]:
     additive, overrides = [], []
     for p in load_all():
-        if p.get("state") != "proven" or not in_scope(p, project):
+        if not is_effective_proven(p) or not in_scope(p, project):
             continue
         (overrides if p.get("type") == "override" else additive).append(p)
     return additive, overrides
@@ -145,7 +159,7 @@ def write_viz(all_patterns: list[dict]) -> list[Path]:
     index.html (the same data + PROFILE.md embedded, so it opens via file://
     with no server and no fetch/CORS gotcha)."""
     slim = [
-        {k: p.get(k, "") for k in ("name", "type", "state", "occurrences", "cluster", "applies_to", "target", "body")}
+        {k: p.get(k, "") for k in ("name", "type", "state", "occurrences", "cluster", "decision", "applies_to", "target", "body")}
         for p in all_patterns
     ]
     json_path = patterns_dir() / "index.json"

@@ -53,7 +53,12 @@ For each piece of signal:
    re-derive `state`: 1 -> `observed`, 2 -> `suspect`, 3+ -> `proven`. An
    explicit standing statement ("always...", "never...", "from now on...")
    goes straight to `proven` regardless of count — it isn't an inference
-   that needs corroborating.
+   that needs corroborating. **Exception:** if the matched pattern has
+   `decision: rejected`, leave it alone entirely — don't bump `occurrences`,
+   don't change `state`, don't resurrect it. The user tombstoned it on
+   purpose; re-proposing it defeats the reject. (A pattern with
+   `decision: accepted` stays accepted; you may still bump its `occurrences`
+   for the record, but never demote it.)
 2. If no, and the signal is a genuine correction/confirmation (not a one-off
    already fully explicit in that same message), create a new pattern file
    at `state: observed`, `occurrences: 1`.
