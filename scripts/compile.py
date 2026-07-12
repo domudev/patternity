@@ -27,7 +27,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _lib import in_scope, load_all, patterns_dir  # noqa: E402
+from _lib import ensure_store, in_scope, load_all, patterns_dir  # noqa: E402
 
 BEGIN = "<!-- patternity:begin -->"
 END = "<!-- patternity:end -->"
@@ -186,18 +186,24 @@ def write_viz(all_patterns: list[dict]) -> list[Path]:
 
 
 def main() -> None:
+    ensure_store()  # self-init on first run — no separate `init` step
     project = current_project()
-    if not patterns_dir().exists():
-        print(f"no pattern store at {patterns_dir()} — nothing to compile")
+    all_pats = load_all()
+
+    # always refresh the store-local dashboard so it's never a dead end...
+    written = write_viz(all_pats)
+    # ...but don't touch this project's CLAUDE.md/etc until there's actually
+    # something in the store — no point stamping empty blocks into a repo.
+    if not all_pats:
+        print(f"store is empty ({patterns_dir()}) — dashboard refreshed, nothing to compile yet")
         return
 
     additive, overrides = load_proven(project)
     applied, unresolved = apply_overrides(overrides)
-    written = write_markdown_targets(additive)
+    written += write_markdown_targets(additive)
     written += [write_cursor_rule(additive), write_copilot_instructions(additive)]
     if unresolved:
         write_overrides_report(unresolved)
-    written += write_viz(load_all())
 
     print(f"[{project}] compiled {len(additive)} pattern(s), {len(applied)} override(s) applied, {len(unresolved)} unresolved")
     for w in written:

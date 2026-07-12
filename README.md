@@ -98,12 +98,11 @@ full frontmatter and the state ladder.
 ## Backing up your pattern store
 
 `${PATTERNITY_HOME:-~/.patternity}` is treated like dotfiles: its own local
-git repo from the start, so every promotion is a revertible commit, but
-nothing is ever pushed automatically. One-time setup:
-
-```bash
-scripts/init_store.sh   # git init's the store if it isn't already a repo
-```
+git repo, so every promotion is a revertible commit, but nothing is ever
+pushed automatically. **No setup needed** — the store self-initializes
+(directory + `git init`) the first time any tool writes to it. (`scripts/init_store.sh`
+still exists if you want to create it deliberately, but you don't have to
+run it.)
 
 The `patternity` skill commits there itself after every distill run
 (`git -C ~/.patternity add -A && git commit -m "..."`). To back it up or

@@ -30,7 +30,7 @@ from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _lib import load_all, parse_pattern, patterns_dir, set_field  # noqa: E402
+from _lib import ensure_store, load_all, parse_pattern, patterns_dir, set_field  # noqa: E402
 
 LADDER = [(3, "proven"), (2, "suspect"), (0, "observed")]  # occurrences -> state
 
@@ -112,11 +112,11 @@ def cmd_list(args) -> int:
 
 
 def cmd_add(args) -> int:
+    ensure_store()
     path = patterns_dir() / f"{args.name}.md"
     if path.exists():
         print(f"already exists: {args.name} (use `set`/`bump` to edit)", file=sys.stderr)
         return 1
-    path.parent.mkdir(parents=True, exist_ok=True)
     body = args.body or (sys.stdin.read().strip() if not sys.stdin.isatty() else "")
     fm = [
         f"name: {args.name}", f"type: {args.type}", "state: observed", "occurrences: 1",
@@ -159,7 +159,7 @@ def cmd_bump(args) -> int:
 def cmd_dashboard(args) -> int:
     # first run has no store yet — create it and render an empty board rather
     # than dead-ending, so there's always something to open.
-    patterns_dir().mkdir(parents=True, exist_ok=True)
+    ensure_store()
     import compile as compile_mod  # regenerate the viz from the store (no project needed)
     _, html = compile_mod.write_viz(load_all())
     opener = {"darwin": "open", "win32": "start"}.get(sys.platform, "xdg-open")

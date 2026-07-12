@@ -3,12 +3,30 @@ one per script. No PyYAML dependency: the schema is small and controlled
 (patterns/_SCHEMA.md), so a hand-rolled parser is a few lines vs. a new dep.
 """
 import os
+import subprocess
 from pathlib import Path
 
 
 def patterns_dir() -> Path:
     home = os.environ.get("PATTERNITY_HOME", str(Path.home() / ".patternity"))
     return Path(home) / "patterns"
+
+
+def ensure_store() -> Path:
+    """Make the store exist on first write — no separate `init` step. Creates
+    the patterns dir and, best-effort, git-inits the store root so promotions
+    are versioned (silent if git is missing; the store works without it).
+    Called by every write path; read paths never create anything."""
+    directory = patterns_dir()
+    directory.mkdir(parents=True, exist_ok=True)
+    root = directory.parent
+    if not (root / ".git").exists():
+        try:
+            subprocess.run(["git", "init", "-q", str(root)], check=False,
+                           capture_output=True, timeout=5)
+        except Exception:
+            pass  # ponytail: versioning is a bonus; the store is usable without git
+    return directory
 
 
 def parse_pattern(path: Path) -> dict:

@@ -93,9 +93,10 @@ For each piece of signal:
    and `PROFILE.md` to reflect the current clusters (group proven patterns
    under a `## <cluster>` heading each, with a sentence or two of synthesis,
    not just a re-listing of pattern bullets).
-7. If `${PATTERNITY_HOME:-~/.patternity}` isn't a git repo yet, run
-   `<patternity-repo>/scripts/init_store.sh` once (idempotent, safe to call
-   every time). Then commit the change there: `git -C "${PATTERNITY_HOME:-$HOME/.patternity}" add -A && git -C "${PATTERNITY_HOME:-$HOME/.patternity}" commit -m "<name>: <observed|suspect|proven> (n=<occurrences>)"`.
+7. The store self-initializes — `patternity.py add`/`compile.py`/etc. create
+   the directory and git-init it on first write, so there's no separate init
+   step and no "store not initialized" dead-end. After writing, commit the
+   change there: `git -C "${PATTERNITY_HOME:-$HOME/.patternity}" add -A && git -C "${PATTERNITY_HOME:-$HOME/.patternity}" commit -m "<name>: <observed|suspect|proven> (n=<occurrences>)"`.
    Local commit only — never push, that's a separate, user-initiated step
    (see README "Backing up your pattern store").
 
