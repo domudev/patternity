@@ -1,15 +1,12 @@
 ---
-description: Recompile adopted patternity patterns into CLAUDE.md/AGENTS.md/.cursor/.github for this project
+description: Recompile adopted patterns into this project's CLAUDE.md/AGENTS.md/.cursor/.github
 ---
 
-From the project root, run:
+From the project root:
 
 ```
 uv run "${CLAUDE_PLUGIN_ROOT}/scripts/compile.py"
 ```
 
-`${CLAUDE_PLUGIN_ROOT}` is set by Claude Code to this plugin's install
-directory, so do not search the filesystem for the repo. This is normally
-done automatically by the `patternity` skill right after a pattern reaches
-`adopted`; use this command to force a re-sync, e.g. after manually editing a
-pattern file.
+Usually automatic once a pattern hits `adopted`; use this to force a re-sync
+(e.g. after editing a pattern by hand).

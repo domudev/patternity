@@ -1,152 +1,62 @@
 ---
 name: patternity
 description: >
-  Distills captured session signal (.patternity/signal.jsonl, from the Stop/
-  prompt-submit hooks and git-history mining) into a personal, cross-project
-  pattern store at ${PATTERNITY_HOME:-~/.patternity}/patterns/, promotes
-  patterns through noticed -> recurring -> adopted as they recur, clusters them
-  into a synthesized PROFILE.md, and compiles adopted ones into
-  CLAUDE.md/AGENTS.md/.cursor/.github instructions right away.
-  **Invoke this proactively, without being asked** — the moment the user
-  states a standing preference or corrects the same kind of thing again
-  ("always X", "never Y", "stop doing Z", "use A not B", or the same
-  correction a second time), record it immediately; don't wait for a
-  /patternity command. Also fires on the explicit triggers ("patternity",
-  "/patternity", "learn/distill my patterns", "what have you noticed") and at
-  session start if signal has accumulated. You are the judge: act on durable
-  preferences, skip genuine one-offs.
+  Learns the user's standing coding preferences so they stop repeating
+  themselves, then compiles them into CLAUDE.md/AGENTS.md/.cursor/.github.
+  Fire proactively (no command needed) whenever the user states a standing
+  preference or repeats a correction ("always", "never", "stop doing", "use A
+  not B"); also on "patternity" / "/patternity" / "distill my patterns" and at
+  session start. You judge: durable prefs yes, one-offs no.
 license: MIT
 ---
 
 # patternity
 
-You are turning implicit signal into explicit rules, personal to the user
-across every project they work in — not just this repo. A user who corrects
-the same thing three times didn't want to type a CLAUDE.md entry, they
-wanted the agent to notice.
+The user is lazy, proudly. They will not hand-write a CLAUDE.md, so you notice
+for them.
 
-## Act proactively — you're the judge
+## When to act
 
-The whole point is that the user shouldn't have to run a command. When,
-during normal work, the user says something that reads as a **standing
-preference or a repeat correction**, quietly record it right then via
-`patternity.py add`/`bump` — no need to run a full batch distill or wait for
-`/patternity`:
+Proactively, mid-conversation, the moment the user states a standing
+preference or repeats a correction. Record it then; don't wait for a command.
+Restraint is the job: durable, generalizable prefs only. Skip one-offs,
+task-specific asks, and anything already fully explicit. When unsure, leave it
+at `noticed` rather than calcify a wrong rule (accept/reject and the git diff
+are the safety net).
 
-- clear standing statements ("always…", "never…", "from now on…", "stop
-  doing…", "use A not B", "I prefer…") → record, and (per the ladder) an
-  explicit standing statement goes straight to `adopted`.
-- the same correction you've seen before → bump its `occurrences`.
+## Store & tools
 
-Then keep it to a one-line mention (see "Reporting"). **Restraint is the
-skill:** act only on durable, generalizable preferences. Skip genuine
-one-offs, task-specific instructions, and anything already fully explicit in
-that single message. A wrong pattern that calcifies into a compiled rule is
-worse than a missed one, so when unsure, leave it at `noticed`/skip rather
-than jump to `adopted`. The user can always accept/reject later.
+Personal store: `${PATTERNITY_HOME:-~/.patternity}/patterns/`. Team store (if
+the repo has one): `<git-root>/.patternity/patterns/`. Prefer the CLI (keeps
+frontmatter valid); run from the plugin dir Claude Code exposes as
+`${CLAUDE_PLUGIN_ROOT}`:
 
-Running the full signal-log distill (below) is for `/patternity`, session
-start, or when signal has clearly piled up.
+- `patternity.py search "<topic>"` : dedupe before creating.
+- `patternity.py add <name> --cluster <c> --agent <claude-code|cursor|copilot> --body "…"` (`--repo` for the team store).
+- `patternity.py bump <name>` : +1 occurrence, re-derives state.
+- `patternity.py set <name> <field> <value>` (or `--clear`).
 
-## Input
+Only `name` is required; other fields default. No Python? edit the markdown
+directly, same result. Full schema: `patterns/_SCHEMA.md`.
 
-Read `.patternity/signal.jsonl` in the current project (one JSON object per
-line). Three kinds of records:
+## Ladder & decisions
 
-- `source: "claude-stop-hook"` — `{user, assistant}` text from a completed
-  Claude Code turn. Look for corrections ("no, don't...", "stop doing X",
-  "actually use Y"), and confirmations (user accepts an unusual choice
-  without pushback, or says "yes exactly", "perfect").
-- `source: "cursor-prompt-hook"` / `"copilot-prompt-hook"` — `{user}` text
-  captured at prompt-submit time (no assistant reply attached yet). Same
-  correction/confirmation signal to look for, just one-sided.
-- `source: "git-history"` — `{sha, subject, body, shortstat}` per commit.
-  Look for repeated fix/revert themes — a signal the agent should have
-  caught it upfront.
+`occurrences` 1 = `noticed`, 2 = `recurring`, 3+ = `adopted` (compiled). An
+explicit "always/never" jumps straight to `adopted`. `decision: accepted`
+pins a pattern; `decision: rejected` tombstones it (never compile, never
+re-propose, don't resurrect it). To suppress another tool's rule: `type:
+override` with `target` set to the verbatim text to remove.
 
-## The pattern store
+## Reflect
 
-Read/write `${PATTERNITY_HOME:-~/.patternity}/patterns/` — global, not this
-project's `patterns/` directory (that one is just the schema reference).
-Schema: `patterns/_SCHEMA.md`. The structured index is `index.json`
-(auto-regenerated by `compile.py`/`dashboard` — machine-readable, you don't
-maintain it by hand).
+When a pattern reaches `adopted`, run
+`uv run "${CLAUDE_PLUGIN_ROOT}/scripts/compile.py"` from the project root
+without asking. Give each pattern a `cluster`, and refresh `PROFILE.md` (a
+sentence or two of synthesis per cluster, not a re-listing). Commit the store
+locally, never push. `index.json`/`index.html` regenerate themselves.
 
-**Prefer the `patternity.py` CLI over hand-editing files** when it fits — it
-keeps frontmatter valid and the occurrence ladder consistent. Run the scripts
-from the plugin's install dir, which Claude Code exposes as
-`${CLAUDE_PLUGIN_ROOT}` (e.g. `uv run "${CLAUDE_PLUGIN_ROOT}/scripts/patternity.py" …`);
-don't search the filesystem for the repo.
-- `patternity.py search "<topic>"` (BM25, relevance-ranked) or `--regex` —
-  check whether a matching pattern already exists before creating a new one.
-- `patternity.py get <name> --json`, `list [--state/--cluster] --json`.
-- `patternity.py add <name> --type … --cluster … --agent <harness> --body "…"`
-  to create a new `noticed` pattern (pass `--agent` from the signal `source`:
-  claude-stop-hook→`claude-code`, cursor-prompt-hook→`cursor`,
-  copilot-prompt-hook→`copilot`; author is filled from git automatically);
-  `bump <name>` to increment occurrences and re-derive state; `set <name>
-  <field> <value>` for other frontmatter edits.
-If Python isn't available, the files are plain markdown — read/grep/edit them
-directly (same result; the CLI is just sugar over the file format). Whichever
-you use, the store is the single source of truth — never keep pattern state
-anywhere else.
+## Reporting
 
-For each piece of signal:
-
-1. Check whether it matches an existing pattern file (same underlying
-   preference, possibly worded differently). If yes, bump `occurrences` and
-   re-derive `state`: 1 -> `noticed`, 2 -> `recurring`, 3+ -> `adopted`. An
-   explicit standing statement ("always...", "never...", "from now on...")
-   goes straight to `adopted` regardless of count — it isn't an inference
-   that needs corroborating. **Exception:** if the matched pattern has
-   `decision: rejected`, leave it alone entirely — don't bump `occurrences`,
-   don't change `state`, don't resurrect it. The user tombstoned it on
-   purpose; re-proposing it defeats the reject. (A pattern with
-   `decision: accepted` stays accepted; you may still bump its `occurrences`
-   for the record, but never demote it.)
-2. If no, and the signal is a genuine correction/confirmation (not a one-off
-   already fully explicit in that same message), create a new pattern file
-   at `state: noticed`, `occurrences: 1`.
-3. If the signal targets suppressing another plugin's rule the user finds
-   annoying (a different SKILL.md, a `.cursor/rules/*.mdc` line, a
-   `.github/copilot-instructions.md` line), set `type: override` and copy
-   the exact offending text into `target` verbatim — the compiler does
-   literal text matching, not fuzzy matching, so precision here matters more
-   than for additive patterns. Explicit override requests go straight to
-   `adopted` too, same rule as above.
-4. Use `applies_to.project` to scope narrowly (the observing project's name)
-   until a pattern has shown up in more than one project — don't default a
-   single-project observation to `project: "*"`.
-5. Set/update `cluster` on the pattern: reuse an existing cluster name from
-   the store if the pattern fits one thematically, mint a new short one only
-   if nothing fits. This is what turns a pile of rules into a profile — see
-   "Clustering into a profile" in `patterns/_SCHEMA.md`.
-6. Rewrite `PROFILE.md` to reflect the current clusters (group adopted
-   patterns under a `## <cluster>` heading each, with a sentence or two of
-   synthesis, not just a re-listing of pattern bullets). The structured
-   `index.json` regenerates itself on the next `compile.py`/`dashboard` —
-   don't hand-maintain a separate index.
-7. The store self-initializes — `patternity.py add`/`compile.py`/etc. create
-   the directory and git-init it on first write, so there's no separate init
-   step and no "store not initialized" dead-end. After writing, commit the
-   change there: `git -C "${PATTERNITY_HOME:-$HOME/.patternity}" add -A && git -C "${PATTERNITY_HOME:-$HOME/.patternity}" commit -m "<name>: <noticed|recurring|adopted> (n=<occurrences>)"`.
-   Local commit only — never push, that's a separate, user-initiated step
-   (see README "Backing up your pattern store").
-
-## Dynamic reflection
-
-If any pattern newly reached `adopted` in this pass, immediately run
-`uv run "${CLAUDE_PLUGIN_ROOT}/scripts/compile.py"` from the current project's
-root — don't wait for the user to ask, and don't ask them to approve first.
-That's what keeps CLAUDE.md/AGENTS.md/`.cursor/rules`/`.github/instructions`
-in sync with what's actually been learned instead of stale.
-
-## Reporting — short, poignant, no BS
-
-Report like a ledger, not an essay. Rules:
-- One line per pattern touched: `name — state (n=N)` plus at most a short
-  clause of why. One line for what compiled/where.
-- No preamble, no restating these instructions, no narrating the files you
-  read, no justifying inaction beyond a brief clause.
-- Nothing to distill? Say it in one sentence and stop.
-- Never pad to sound thorough. If the whole report is one line, ship one line.
+Ledger, not essay. One line per pattern touched (`name: state, n=N`), one line
+for what compiled. No preamble, no narrating the files you read, no restating
+this. Nothing to do? Say so in one sentence.
