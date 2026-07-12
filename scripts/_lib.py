@@ -41,6 +41,29 @@ def in_scope(p: dict, project: str) -> bool:
     return project_scope == "*" or project in project_scope.split(",")
 
 
+def set_field(path: Path, key: str, value: str | None) -> None:
+    """Set/replace a top-level frontmatter field in place, or remove it when
+    value is None. Order-preserving (replaces where the key already is,
+    otherwise appends at the end of the frontmatter block); the parser is
+    order-independent, but keeping edits stable makes the git diffs clean.
+    Top-level keys only — nested applies_to.* is left to hand-editing."""
+    _, fm, body = path.read_text().split("---", 2)
+    lines, replaced = [], False
+    for line in fm.split("\n"):
+        if line.strip().startswith(f"{key}:"):
+            if value is not None and not replaced:
+                lines.append(f"{key}: {value}")
+                replaced = True
+            continue  # drop the old line (and any dupes; drop entirely if removing)
+        lines.append(line)
+    if value is not None and not replaced:
+        end = len(lines)
+        while end > 0 and lines[end - 1].strip() == "":
+            end -= 1  # insert before the block's trailing blank line(s)
+        lines.insert(end, f"{key}: {value}")
+    path.write_text("---" + "\n".join(lines) + "---" + body)
+
+
 def load_all() -> list[dict]:
     """Every pattern in the store, any state — for the visualization, which
     shows the whole personal store rather than one project's compiled slice."""

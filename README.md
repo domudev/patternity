@@ -180,6 +180,32 @@ e.g. "you default to uv over pip/venv, stated across multiple projects".
 That's the "who is this user" digest; the board underneath stays the
 detailed ledger.
 
+## Tool surface (`patternity.py`)
+
+An agent or skill can query and edit the store on the fly through one CLI,
+called via Bash — no MCP server, no daemon, works identically across Claude
+Code / Cursor / Copilot:
+
+```bash
+uv run scripts/patternity.py search "testing style"        # BM25, relevance-ranked
+uv run scripts/patternity.py search "TODO|FIXME" --regex    # structural / exact
+uv run scripts/patternity.py get uv-pref --json
+uv run scripts/patternity.py list --state proven --json
+uv run scripts/patternity.py add lint-on-save --cluster workflow --body "…"
+uv run scripts/patternity.py bump uv-pref                    # +1 occurrence, re-derive state
+uv run scripts/patternity.py set uv-pref decision accepted   # (--clear to remove)
+uv run scripts/patternity.py dashboard                       # regenerate + open the board
+```
+
+**The file format is the API; this CLI is sugar.** The store is plain
+markdown, so the fallback isn't something to build — if Python isn't
+installed, an agent just greps and edits the files directly and gets the
+same result. `patternity.py` exists to keep frontmatter valid and the
+occurrence ladder consistent, and to give relevance-ranked search (BM25)
+that raw grep can't. Search is computed on demand with no index or
+dependency — fine for a personal store; a cached index only matters if it
+ever grows into the thousands.
+
 ## Fine-grained scoping
 
 The store is global, but a pattern doesn't have to apply everywhere:
@@ -253,9 +279,9 @@ uv run /path/to/patternity/scripts/mine_git_history.py
 ## Repo layout
 
 - `skills/patternity/SKILL.md` — canonical distillation/promotion logic
-- `commands/` — `/patternity-distill`, `/patternity-compile` slash commands
+- `commands/` — `/patternity-distill`, `/patternity-compile`, `/patternity-dashboard` slash commands
 - `hooks/` — shared capture hook wired into Claude Code, Cursor, and Copilot
-- `scripts/` — `mine_git_history.py`, `compile.py`, `decide.py` (apply accept/reject decisions), shared `_lib.py` parser (plain `uv run` scripts, no project/deps needed), plus `install.sh` (wires Cursor/Copilot into a target project) and `init_store.sh` (git-inits the personal pattern store)
+- `scripts/` — `patternity.py` (agent-facing search/read/write/dashboard CLI), `compile.py`, `mine_git_history.py`, `decide.py` (apply accept/reject decisions), shared `_lib.py` parser (plain `uv run` scripts, no project/deps needed), plus `install.sh` (wires Cursor/Copilot into a target project) and `init_store.sh` (git-inits the personal pattern store)
 - `patterns/` — schema doc + reference example (the real store is `${PATTERNITY_HOME:-~/.patternity}/patterns/`)
 - `viz/template.html` — the visualization `compile.py` fills in and writes to the store as `index.html`
 - `.claude-plugin/` — `plugin.json` + `marketplace.json` so this repo installs directly via `/plugin marketplace add domudev/patternity`

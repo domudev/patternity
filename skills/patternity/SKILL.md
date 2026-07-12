@@ -46,6 +46,19 @@ project's `patterns/` directory (that one is just the schema reference).
 Schema: `patterns/_SCHEMA.md`. Index: `WALKING_DOC.md` in the same
 directory, regenerated every time you touch a pattern.
 
+**Prefer the `patternity.py` CLI over hand-editing files** when it fits — it
+keeps frontmatter valid and the occurrence ladder consistent:
+- `patternity.py search "<topic>"` (BM25, relevance-ranked) or `--regex` —
+  check whether a matching pattern already exists before creating a new one.
+- `patternity.py get <name> --json`, `list [--state/--cluster] --json`.
+- `patternity.py add <name> --type … --cluster … --body "…"` to create a new
+  `observed` pattern; `bump <name>` to increment occurrences and re-derive
+  state; `set <name> <field> <value>` for other frontmatter edits.
+If Python isn't available, the files are plain markdown — read/grep/edit them
+directly (same result; the CLI is just sugar over the file format). Whichever
+you use, the store is the single source of truth — never keep pattern state
+anywhere else.
+
 For each piece of signal:
 
 1. Check whether it matches an existing pattern file (same underlying

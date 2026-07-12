@@ -21,31 +21,15 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _lib import patterns_dir  # noqa: E402
+from _lib import patterns_dir, set_field  # noqa: E402
 
 VERBS = {"accept": "accepted", "reject": "rejected", "clear": None}
 
 
 def set_decision(path: Path, value: str | None) -> None:
-    """Drop any existing top-level `decision:` line from the frontmatter, then
-    add the new one (unless clearing). Order-independent — the parser reads
-    flat keys — so we just append after the frontmatter's other fields."""
-    text = path.read_text()
-    _, fm, body = text.split("---", 2)
-    lines = [ln for ln in fm.splitlines() if not ln.strip().startswith("decision:")]
-    if value is not None:
-        # insert after the last top-level field, before any nested block —
-        # simplest safe spot is right after `type:` which every pattern has.
-        out, inserted = [], False
-        for ln in lines:
-            out.append(ln)
-            if ln.startswith("type:") and not inserted:
-                out.append(f"decision: {value}")
-                inserted = True
-        if not inserted:
-            out.append(f"decision: {value}")
-        lines = out
-    path.write_text("---" + "\n".join(lines) + "\n---" + body)
+    """Set/clear the `decision` field. Thin wrapper over the shared frontmatter
+    editor so decide.py and patternity.py `set` never drift apart."""
+    set_field(path, "decision", value)
 
 
 def main(argv: list[str]) -> int:

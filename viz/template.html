@@ -31,16 +31,22 @@
     --font-hand: 'Caveat', cursive;
   }
   * { box-sizing: border-box; }
+  /* faint polka-dot field → scratchpad feel; kept very low-contrast so it
+     never competes with the cards. */
   body {
     margin: 0; font-family: var(--font-sans); color: var(--text-primary);
-    background: radial-gradient(900px 500px at 18% -8%, rgba(97,110,150,0.12), transparent 60%), var(--page);
+    background:
+      radial-gradient(900px 500px at 18% -8%, rgba(97,110,150,0.12), transparent 60%),
+      radial-gradient(rgba(255,255,255,0.05) 1.2px, transparent 1.4px),
+      var(--page);
+    background-size: 100% 100%, 22px 22px, 100% 100%;
     background-attachment: fixed; min-height: 100vh;
   }
   header { padding: 34px 34px 18px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 11px; }
   .logo { flex: none; }
-  h1 { font-family: var(--font-hand); font-size: 40px; margin: 0; font-weight: 700; line-height: .9; }
-  .sub { color: var(--text-secondary); font-size: 13.5px; margin: 6px 0 0; max-width: 46ch; }
+  h1 { font-family: var(--font-hand); font-size: 40px; margin: 0; font-weight: 700; line-height: 1; }
+  .sub { color: var(--text-secondary); font-size: 13.5px; margin: 8px 0 0; max-width: 46ch; }
   .search {
     border: 1px solid var(--border); border-radius: var(--radius); background: var(--card);
     color: var(--text-primary); padding: 9px 12px; font-size: 13px; min-width: 230px; font-family: inherit;
@@ -138,7 +144,10 @@
   /* rejected tray — collapsed by default so tombstoned patterns are out of
      the way but recoverable (reopen the card, clear the decision). */
   .rejected { margin: 0 34px 40px; }
-  .rejected summary { cursor: pointer; color: var(--text-muted); font-size: 12px; padding: 6px 0; user-select: none; }
+  .rejected summary { cursor: pointer; color: var(--text-muted); font-size: 12px; padding: 6px 0; user-select: none; display: flex; align-items: center; gap: 7px; list-style: none; }
+  .rejected summary::-webkit-details-marker { display: none; }
+  .rejected summary::before { content: "›"; font-size: 15px; line-height: 1; transition: transform .15s ease; }
+  .rejected[open] summary::before { transform: rotate(90deg); }
   .rejected .cards { margin-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   @media (max-width: 760px) { .rejected .cards { grid-template-columns: 1fr; } }
 
@@ -183,17 +192,17 @@
 </head>
 <body>
 <header>
-  <div class="brand">
-    <svg class="logo" width="34" height="30" viewBox="0 0 32 30" fill="none" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-      <path d="M5 4 C2 9, 8 13, 5 18 C3 22, 6 24, 5 26" stroke="var(--observed)"/>
-      <path d="M12 4 C15 9, 9 13, 12 18 C14 22, 10 25, 12 26" stroke="var(--suspect)"/>
-      <path d="M19 4 C16 8, 22 12, 19 17 C17 21, 21 24, 19 26" stroke="var(--proven)"/>
-      <path d="M26 4 C29 9, 23 14, 26 19 C28 23, 24 25, 26 26" stroke="var(--override)"/>
-    </svg>
-    <div>
+  <div>
+    <div class="brand">
+      <svg class="logo" width="30" height="34" viewBox="0 0 32 30" fill="none" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+        <path d="M5 4 C2 9, 8 13, 5 18 C3 22, 6 24, 5 26" stroke="var(--observed)"/>
+        <path d="M12 4 C15 9, 9 13, 12 18 C14 22, 10 25, 12 26" stroke="var(--suspect)"/>
+        <path d="M19 4 C16 8, 22 12, 19 17 C17 21, 21 24, 19 26" stroke="var(--proven)"/>
+        <path d="M26 4 C29 9, 23 14, 26 19 C28 23, 24 25, 26 26" stroke="var(--override)"/>
+      </svg>
       <h1>patternity</h1>
-      <p class="sub">what it's noticed about how you work, from first sighting to something it now assumes.</p>
     </div>
+    <p class="sub">what it's noticed about how you work, from first sighting to something it now assumes.</p>
   </div>
   <input class="search" id="search" type="search" placeholder="search patterns…" autocomplete="off">
 </header>
