@@ -10,7 +10,7 @@
      in ink tokens throughout; the tint is the only thing carrying state.
      display labels (Noticed / Recurring / Adopted) are cosmetic only — the
      underlying `state` values (observed/suspect/proven) are unchanged, see
-     patterns/_SCHEMA.md. Square corners everywhere except the dot marks. */
+     patterns/_SCHEMA.md. */
   :root {
     --page: #f9f9f7;
     --surface-1: #fcfcfb;
@@ -18,6 +18,7 @@
     --text-secondary: #52514e;
     --text-muted: #898781;
     --border: rgba(11,11,11,0.10);
+    --radius: 10px;
     --observed-bg: hsl(210 35% 94%);  /* pale slate-blue: just spotted */
     --suspect-bg:  hsl(35 65% 90%);   /* pale amber: warming up */
     --proven-bg:   hsl(140 40% 90%);  /* pale green: confirmed */
@@ -38,39 +39,50 @@
       --proven-bg:   hsl(140 22% 18%);
     }
   }
-  * { box-sizing: border-box; border-radius: 0 !important; }
+  * { box-sizing: border-box; }
   body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--page); color: var(--text-primary); }
   header { padding: 28px 32px 16px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
   h1 { font-size: 17px; margin: 0 0 4px; font-weight: 600; }
   .sub { color: var(--text-secondary); font-size: 13px; margin: 0; }
-  .search { border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary); padding: 7px 10px; font-size: 13px; min-width: 220px; font-family: inherit; }
-  .search:focus { outline: 2px solid var(--text-muted); outline-offset: -1px; }
+  .search { border: 1px solid var(--border); border-radius: 6px; background: var(--surface-1); color: var(--text-primary); padding: 7px 10px; font-size: 13px; min-width: 220px; font-family: inherit; }
+  .search:focus { outline: 2px solid var(--text-muted); outline-offset: 2px; }
   .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 0 32px 32px; align-items: start; }
   @media (max-width: 720px) { .board { grid-template-columns: 1fr; } }
   .col { border-top: 2px solid var(--border); padding-top: 12px; }
   .col h2 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 0 0 12px; }
   .col h2 .n { color: var(--text-muted); font-weight: 400; }
-  .card { background: var(--surface-1); border: 1px solid var(--border); padding: 14px 16px; margin-bottom: 8px; }
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; cursor: pointer; outline: 2px solid transparent; outline-offset: 0; transition: outline-color .12s ease, outline-offset .12s ease; }
+  .card:hover, .card:focus-visible { outline-color: var(--text-secondary); outline-offset: 4px; }
   .card.observed { background: var(--observed-bg); }
   .card.suspect { background: var(--suspect-bg); }
   .card.proven { background: var(--proven-bg); }
+  .card .top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .card .name { font-weight: 600; font-size: 14px; }
-  .card .tag { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; margin-left: 6px; }
+  .chip { font-size: 10px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); text-transform: uppercase; letter-spacing: .03em; background: rgba(11,11,11,0.03); }
   .card .why { font-size: 12.5px; color: var(--text-secondary); margin-top: 6px; line-height: 1.4; }
   .card .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
   .card .scope { font-size: 11px; color: var(--text-muted); }
   .dots { display: flex; gap: 3px; }
-  .dots .p { width: 6px; height: 6px; border-radius: 50% !important; background: var(--text-muted); opacity: .35; }
+  .dots .p { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); opacity: .35; }
   .dots .p.on { opacity: 1; }
-  .badge { font-size: 10.5px; padding: 2px 6px; background: rgba(250,178,25,0.22); color: var(--text-primary); }
+  .badge { font-size: 10.5px; padding: 2px 8px; border-radius: 999px; background: rgba(250,178,25,0.22); color: var(--text-primary); }
   .empty { color: var(--text-muted); font-size: 12px; font-style: italic; }
-  .more { display: block; width: 100%; margin-top: 4px; padding: 8px; border: 1px dashed var(--border); background: none; color: var(--text-secondary); font-size: 12px; font-family: inherit; cursor: pointer; }
+  .more { display: block; width: 100%; margin-top: 4px; padding: 8px; border: 1px dashed var(--border); border-radius: 6px; background: none; color: var(--text-secondary); font-size: 12px; font-family: inherit; cursor: pointer; }
   .more:hover { background: var(--surface-1); }
-  .profile { margin: 0 32px 8px; padding: 16px 20px; border: 1px solid var(--border); background: var(--surface-1); }
+  .profile { margin: 0 32px 8px; padding: 16px 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-1); }
   .profile h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin: 14px 0 4px; }
   .profile h3:first-child { margin-top: 0; }
   .profile p, .profile li { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 2px 0; }
   .profile ul { margin: 4px 0; padding-left: 18px; }
+
+  dialog#detail { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-1); color: var(--text-primary); padding: 22px 26px; width: min(480px, 90vw); }
+  dialog#detail::backdrop { background: rgba(0,0,0,0.35); }
+  dialog#detail .dtop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  dialog#detail h2 { font-size: 16px; margin: 0; }
+  dialog#detail .close { border: none; background: none; color: var(--text-muted); font-size: 18px; cursor: pointer; line-height: 1; padding: 4px; }
+  dialog#detail .row { margin-top: 14px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; }
+  dialog#detail .body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin-top: 4px; white-space: pre-wrap; }
+  dialog#detail .chips { margin-top: 14px; display: flex; gap: 6px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -87,6 +99,14 @@
   <div class="col" data-state="suspect"><h2>Recurring <span class="n"></span></h2><div class="cards"></div></div>
   <div class="col" data-state="proven"><h2>Adopted <span class="n"></span></h2><div class="cards"></div></div>
 </div>
+<dialog id="detail">
+  <div class="dtop"><h2 id="d-name"></h2><button class="close" id="d-close" aria-label="close">✕</button></div>
+  <div class="row">Why</div>
+  <div class="body" id="d-body"></div>
+  <div class="row" id="d-target-row" hidden>Overrides</div>
+  <div class="body" id="d-target" hidden></div>
+  <div class="chips" id="d-chips"></div>
+</dialog>
 <script id="patternity-data" type="application/json">/*__PATTERNITY_DATA__*/</script>
 <script id="patternity-profile" type="application/json">/*__PATTERNITY_PROFILE__*/</script>
 <script>
@@ -107,16 +127,18 @@
     return haystack.includes(q);
   }
 
-  function card(p) {
+  const STATE_LABEL = { observed: 'Noticed', suspect: 'Recurring', proven: 'Adopted' };
+
+  function card(p, index) {
     const occ = Math.min(parseInt(p.occurrences, 10) || 0, 3);
     const dots = [1, 2, 3].map(i => `<span class="p${i <= occ ? ' on' : ''}"></span>`).join('');
     const at = p.applies_to || {};
     const scope = [at.tool, at.project].filter(x => x && x !== '*').join(' · ') || 'everywhere';
     const badge = p.type === 'override' ? '<span class="badge">overrides another rule</span>' : '';
     const why = (p.body || '').split('\n').find(l => l.trim()) || '';
-    const tag = p.cluster ? `<span class="tag">${escapeHtml(p.cluster)}</span>` : '';
-    return `<div class="card ${p.state}">
-      <div class="name">${escapeHtml(p.name)}${tag}</div>
+    const tag = p.cluster ? `<span class="chip">${escapeHtml(p.cluster)}</span>` : '';
+    return `<div class="card ${p.state}" data-index="${index}" tabindex="0">
+      <div class="top"><span class="name">${escapeHtml(p.name)}</span>${tag}</div>
       <div class="why">${escapeHtml(why)}</div>
       <div class="foot">
         <span class="scope">${escapeHtml(scope)}</span>
@@ -132,7 +154,9 @@
       const items = DATA.filter(p => p.state === state && matches(p, q));
       col.querySelector('h2 .n').textContent = items.length;
       const visible = items.slice(0, shown[state]);
-      const cardsHtml = visible.length ? visible.map(card).join('') : '<div class="empty">nothing here yet</div>';
+      const cardsHtml = visible.length
+        ? visible.map(p => card(p, DATA.indexOf(p))).join('')
+        : '<div class="empty">nothing here yet</div>';
       const moreHtml = items.length > visible.length
         ? `<button class="more" data-state="${state}">show ${Math.min(PAGE_SIZE, items.length - visible.length)} more (${items.length - visible.length} left)</button>`
         : '';
@@ -140,6 +164,11 @@
     });
     document.querySelectorAll('.more').forEach(btn => {
       btn.addEventListener('click', () => { shown[btn.dataset.state] += PAGE_SIZE; render(); });
+    });
+    document.querySelectorAll('.card').forEach(el => {
+      const open = () => openDetail(DATA[parseInt(el.dataset.index, 10)]);
+      el.addEventListener('click', open);
+      el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
     });
   }
 
@@ -173,6 +202,28 @@
     panel.innerHTML = html;
     panel.hidden = !html;
   }
+
+  const detail = document.getElementById('detail');
+  function openDetail(p) {
+    document.getElementById('d-name').textContent = p.name;
+    document.getElementById('d-body').textContent = p.body || '';
+    const at = p.applies_to || {};
+    const scope = [at.tool, at.project, at.glob].filter(x => x && x !== '*').join(' · ') || 'everywhere';
+    const hasTarget = p.type === 'override' && p.target && p.target !== 'null';
+    document.getElementById('d-target-row').hidden = !hasTarget;
+    const targetEl = document.getElementById('d-target');
+    targetEl.hidden = !hasTarget;
+    targetEl.textContent = hasTarget ? p.target : '';
+    document.getElementById('d-chips').innerHTML = [
+      STATE_LABEL[p.state] || p.state,
+      p.cluster,
+      `${p.occurrences || 0} occurrence${p.occurrences == 1 ? '' : 's'}`,
+      scope,
+    ].filter(Boolean).map(c => `<span class="chip">${escapeHtml(c)}</span>`).join('');
+    detail.showModal();
+  }
+  document.getElementById('d-close').addEventListener('click', () => detail.close());
+  detail.addEventListener('click', e => { if (e.target === detail) detail.close(); });
 
   renderProfile(PROFILE_MD);
   render();
