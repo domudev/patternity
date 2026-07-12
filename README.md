@@ -145,9 +145,9 @@ drawer** with the full body text, not just the truncated first line.
 
 The logo, title, headings, card/drawer titles, and cluster chips use Caveat
 (a handwriting webfont) as a flourish; everything else read as data —
-body/"why" text, state and scope chips, occurrence counts — stays in Inter,
-a plain, small-size-legible sans. Both load from Google Fonts with a
-system-font fallback if offline.
+body/"why" text, state and scope chips, occurrence counts — stays in Ubuntu,
+a plain, legible sans. Both load from Google Fonts with a system-font
+fallback if offline.
 
 ### Accept / reject
 
