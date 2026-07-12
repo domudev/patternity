@@ -43,9 +43,21 @@ def ensure_store() -> Path:
     return directory
 
 
+# Sensible defaults so a hand-authored pattern needs only `name` + body — the
+# reader fills the rest. Keeps "the file format is the API" cheap to write by
+# hand, and keeps every consumer (compile/viz/CLI) from special-casing blanks.
+DEFAULTS = {
+    "type": "feedback", "state": "noticed", "occurrences": "1", "cluster": "",
+    "decision": "", "agent": "unknown", "author": "anon", "target": "null",
+}
+APPLIES_DEFAULTS = {"tool": "*", "glob": "**/*", "project": "*"}
+
+
 def parse_pattern(path: Path) -> dict:
     text = path.read_text()
-    _, fm, body = text.split("---", 2)
+    # tolerate a body-only file (no frontmatter) — treat the whole thing as body
+    parts = text.split("---", 2)
+    fm, body = (parts[1], parts[2]) if len(parts) == 3 else ("", text)
     data: dict = {}
     applies_to: dict = {}
     in_applies_to = False
@@ -62,6 +74,10 @@ def parse_pattern(path: Path) -> dict:
         in_applies_to = False
         k, _, v = line.partition(":")
         data[k.strip()] = v.strip().strip('"')
+    for k, v in DEFAULTS.items():
+        data.setdefault(k, v)
+    for k, v in APPLIES_DEFAULTS.items():
+        applies_to.setdefault(k, v)
     data["applies_to"] = applies_to
     data["body"] = body.strip()
     data["name"] = path.stem

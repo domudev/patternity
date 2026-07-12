@@ -39,6 +39,21 @@ Rule body in plain prose. State the rule, then:
 **How to apply:** when this should change agent behavior.
 ```
 
+**Only `name` is required.** Every other field has a default filled in on
+read (`type: feedback`, `state: noticed`, `occurrences: 1`, `applies_to:
+{tool:"*", glob:"**/*", project:"*"}`, no cluster/decision, `agent: unknown`,
+`author: anon`). So the minimal valid pattern is just a name + body:
+
+```yaml
+---
+name: prefer-tabs
+---
+Prefer tabs over spaces.
+```
+
+`patternity.py add <name>` writes the same thing (with git author + agent
+filled), so adding stays a one-liner whether by CLI or by hand.
+
 ## State ladder (frequency-driven, not manual approval)
 
 | occurrences | state    | compiled? |
