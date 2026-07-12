@@ -26,6 +26,7 @@
     --suspect:  #f4b740;
     --proven:   #3ddc84;
     --override: #a78bfa;
+    --rejected: #b06a7a;   /* muted rose — "set aside", distinct from the 3 states + override */
 
     --font-sans: 'Ubuntu', system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-hand: 'Caveat', cursive;
@@ -42,23 +43,36 @@
     background-size: 100% 100%, 22px 22px, 100% 100%;
     background-attachment: fixed; min-height: 100vh;
   }
-  header { padding: 34px 34px 18px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
-  .brand { display: flex; align-items: center; gap: 11px; }
+  /* one centered shell so header / bar / profile / board all share the same
+     gutters and don't stretch edge-to-edge on wide monitors. */
+  .shell { max-width: 1240px; margin: 0 auto; padding: 0 34px; }
+  header { padding: 34px 0 18px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; }
   .logo { flex: none; }
-  h1 { font-family: var(--font-hand); font-size: 40px; margin: 0; font-weight: 700; line-height: 1; }
+  h1 { font-family: var(--font-hand); font-size: 42px; margin: 0; font-weight: 700; line-height: 1; }
   .sub { color: var(--text-secondary); font-size: 13.5px; margin: 8px 0 0; max-width: 46ch; }
   .search {
-    border: 1px solid var(--border); border-radius: var(--radius); background: var(--card);
-    color: var(--text-primary); padding: 9px 12px; font-size: 13px; min-width: 230px; font-family: inherit;
+    border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--card);
+    color: var(--text-primary); padding: 10px 13px; font-size: 13px; min-width: 250px; font-family: inherit;
     transition: border-color .15s ease, box-shadow .15s ease;
   }
   .search::placeholder { color: var(--text-muted); }
-  .search:focus { outline: none; border-color: var(--border-strong); box-shadow: 0 0 0 3px rgba(255,255,255,0.06); }
+  .search:focus { outline: none; border-color: var(--text-muted); box-shadow: 0 0 0 3px rgba(255,255,255,0.06); }
 
-  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; padding: 6px 34px 40px; align-items: start; }
+  /* distribution bar — live proportion of the store by bucket (incl. accepted
+     folded into Adopted, and rejected). 2px surface gaps between segments. */
+  .dist { margin: 0 0 22px; }
+  .dist-bar { display: flex; gap: 2px; height: 8px; border-radius: var(--radius); overflow: hidden; background: var(--page); border: 1px solid var(--border); }
+  .dist-bar span { display: block; min-width: 3px; }
+  .dist-legend { display: flex; gap: 16px; margin-top: 9px; font-size: 11px; color: var(--text-secondary); flex-wrap: wrap; }
+  .dist-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+  .dist-legend .lg.zero { opacity: .4; }
+  .dist-legend i { width: 9px; height: 9px; border-radius: 2px; }
+
+  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding: 0 0 40px; align-items: start; }
   @media (max-width: 760px) { .board { grid-template-columns: 1fr; } }
 
-  .col { --accent: var(--text-muted); }
+  .col { --accent: var(--text-muted); background: rgba(255,255,255,0.014); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 14px 8px; min-height: 260px; }
   .col[data-state="observed"] { --accent: var(--observed); }
   .col[data-state="suspect"]  { --accent: var(--suspect); }
   .col[data-state="proven"]   { --accent: var(--proven); }
@@ -125,7 +139,7 @@
   .dots .p.on { background: var(--accent); opacity: 1; box-shadow: 0 0 6px var(--accent); }
   .badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: var(--radius); background: var(--override); color: #14101f; text-transform: uppercase; letter-spacing: .04em; }
 
-  .empty { color: var(--text-muted); font-size: 12px; font-style: italic; padding: 4px 2px; }
+  .empty { color: var(--text-muted); font-size: 12px; font-style: italic; text-align: center; padding: 22px 12px; border: 1px dashed var(--border); border-radius: var(--radius); }
   .more {
     display: block; width: 100%; margin-top: 2px; padding: 9px; border: 1px dashed var(--border); border-radius: var(--radius);
     background: none; color: var(--text-secondary); font-size: 12px; font-family: inherit; cursor: pointer; transition: background .14s, border-color .14s;
@@ -133,7 +147,7 @@
   .more:hover { background: rgba(255,255,255,0.04); border-color: var(--border-strong); }
 
   .profile {
-    margin: 0 34px 14px; padding: 18px 22px; border: 1px solid var(--border); border-radius: var(--radius);
+    margin: 0 0 22px; padding: 18px 22px; border: 1px solid var(--border); border-radius: var(--radius);
     background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent), var(--card);
   }
   .profile h3 { font-family: var(--font-hand); font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 16px 0 3px; }
@@ -191,10 +205,11 @@
 </style>
 </head>
 <body>
+<div class="shell">
 <header>
   <div>
     <div class="brand">
-      <svg class="logo" width="30" height="34" viewBox="0 0 32 30" fill="none" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+      <svg class="logo" width="34" height="38" viewBox="0 0 32 30" fill="none" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
         <path d="M5 4 C2 9, 8 13, 5 18 C3 22, 6 24, 5 26" stroke="var(--observed)"/>
         <path d="M12 4 C15 9, 9 13, 12 18 C14 22, 10 25, 12 26" stroke="var(--suspect)"/>
         <path d="M19 4 C16 8, 22 12, 19 17 C17 21, 21 24, 19 26" stroke="var(--proven)"/>
@@ -206,6 +221,7 @@
   </div>
   <input class="search" id="search" type="search" placeholder="search patterns…" autocomplete="off">
 </header>
+<div class="dist" id="dist"></div>
 <div class="profile" id="profile" hidden></div>
 <div class="board" id="board">
   <div class="col" data-state="observed"><h2>Noticed <span class="n"></span></h2><div class="cards"></div></div>
@@ -216,6 +232,7 @@
   <summary></summary>
   <div class="cards"></div>
 </details>
+</div>
 <dialog id="detail"><div class="drawer-inner">
   <div class="drawer-grip"></div>
   <div class="dtop"><h2 id="d-name"></h2><button class="close" id="d-close" aria-label="close">✕</button></div>
@@ -327,7 +344,26 @@
       el.addEventListener('click', open);
       el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
     });
+    renderDist();
     renderTray();
+  }
+
+  // whole-store proportion by bucket (honors pending decisions, so it shifts
+  // live as you accept/reject); not search-filtered — it's a store overview.
+  const DIST = [
+    ['observed', 'Noticed', 'var(--observed)'], ['suspect', 'Recurring', 'var(--suspect)'],
+    ['proven', 'Adopted', 'var(--proven)'], ['rejected', 'Rejected', 'var(--rejected)'],
+  ];
+  function renderDist() {
+    const counts = Object.fromEntries(DIST.map(([k]) => [k, 0]));
+    DATA.forEach(p => { counts[bucket(p)]++; });
+    const total = DATA.length || 1;
+    const bar = DIST.filter(([k]) => counts[k]).map(([k, label, c]) =>
+      `<span style="flex:${counts[k]};background:${c}" title="${label}: ${counts[k]} (${Math.round(counts[k] / total * 100)}%)"></span>`).join('')
+      || '<span style="flex:1;background:var(--border)"></span>';
+    const legend = DIST.map(([k, label, c]) =>
+      `<span class="lg${counts[k] ? '' : ' zero'}"><i style="background:${c}"></i>${label} ${counts[k]}</span>`).join('');
+    document.getElementById('dist').innerHTML = `<div class="dist-bar">${bar}</div><div class="dist-legend">${legend}</div>`;
   }
 
   function renderTray() {
