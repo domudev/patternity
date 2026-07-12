@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "userPromptSubmitted": [
+      {
+        "type": "command",
+        "bash": "python3 <path-to-patternity-clone>/hooks/capture.py"
+      }
+    ]
+  }
+}
