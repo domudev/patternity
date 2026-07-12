@@ -142,21 +142,32 @@ def write_overrides_report(unresolved: list[str]) -> None:
 
 def write_viz(all_patterns: list[dict]) -> list[Path]:
     """Regenerate the whole-store visualization: index.json (raw data) and
-    index.html (the same data embedded, so it opens via file:// with no
-    server and no fetch/CORS gotcha)."""
+    index.html (the same data + PROFILE.md embedded, so it opens via file://
+    with no server and no fetch/CORS gotcha)."""
     slim = [
-        {k: p.get(k, "") for k in ("name", "type", "state", "occurrences", "applies_to", "target", "body")}
+        {k: p.get(k, "") for k in ("name", "type", "state", "occurrences", "cluster", "applies_to", "target", "body")}
         for p in all_patterns
     ]
     json_path = patterns_dir() / "index.json"
     json_path.write_text(json.dumps(slim, indent=2))
 
+    profile_path = patterns_dir() / "PROFILE.md"
+    profile_text = profile_path.read_text() if profile_path.exists() else ""
+
+    def embed(value) -> str:
+        # each placeholder sits inside its own <script type="application/json">
+        # tag, parsed client-side with JSON.parse — dump once (array for data,
+        # string for profile text) and escape "<" so a literal "</script>" in
+        # a pattern body or the profile can't break out of the tag.
+        return json.dumps(value).replace("<", "\\u003c")
+
     template = (REPO_ROOT / "viz" / "template.html").read_text()
     html_path = patterns_dir() / "index.html"
-    # escape "<" so a pattern body containing the literal text "</script>"
-    # can't break out of the embedded data tag
-    embedded = json.dumps(slim).replace("<", "\\u003c")
-    html_path.write_text(template.replace("/*__PATTERNITY_DATA__*/", embedded))
+    html_path.write_text(
+        template
+        .replace("/*__PATTERNITY_DATA__*/", embed(slim))
+        .replace("/*__PATTERNITY_PROFILE__*/", embed(profile_text))
+    )
     return [json_path, html_path]
 
 

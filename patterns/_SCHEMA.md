@@ -8,6 +8,10 @@ of file live there:
 - `WALKING_DOC.md` — the index. One line per pattern, regenerated whenever a
   pattern is added or its state changes:
   `- [name](name.md) — state, N occurrences — one-line hook`
+- `PROFILE.md` — a short narrative synthesis of proven patterns grouped by
+  `cluster`, regenerated the same way. Not a new instruction source (that's
+  still individual compiled patterns) — this is the human/agent-readable
+  "who is this user" summary, shown as a panel in the visualization.
 - `<kebab-case-name>.md` — one file per pattern.
 
 ## Pattern file frontmatter
@@ -18,6 +22,7 @@ name: kebab-case-slug          # unique, becomes the filename stem
 type: user | feedback | project | reference | override
 state: observed | suspect | proven   # compile.py only reads proven
 occurrences: 1
+cluster: tooling | code-style | workflow | communication | testing | ...
 applies_to:
   tool: "*" | claude | cursor | copilot     # "*" = all tools
   glob: "**/*"                              # file scope, tool-dependent
@@ -63,6 +68,17 @@ observed in one repo (`applies_to: {project: packlist}`) shouldn't leak into
 every other project's CLAUDE.md just because the store is global. Default to
 `"*"` only once a preference has actually shown up across more than one
 project; scope to the observing project until then.
+
+## Clustering into a profile
+
+`cluster` groups patterns by theme so they read as a profile, not a pile of
+unrelated rules. There's no fixed enum — the skill picks a short existing
+cluster name when a new pattern fits one, and only mints a new one when
+nothing fits, so the set of clusters stays small and stable (a handful,
+not one per pattern). Whenever clusters change, regenerate `PROFILE.md`:
+group proven patterns under a `## <cluster>` heading each, with a
+sentence or two of synthesis per cluster, not just a re-listing of the
+pattern bullets — that's the difference between a profile and an index.
 
 ## Field notes
 

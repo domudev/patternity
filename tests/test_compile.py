@@ -33,6 +33,7 @@ name: proven-one
 type: feedback
 state: proven
 occurrences: 3
+cluster: tooling
 applies_to:
   tool: "*"
   glob: "**/*"
@@ -41,6 +42,12 @@ target: null
 ---
 
 Use uv for python scripts.
+""")
+        write(patterns / "PROFILE.md", """## Tooling
+
+You default to uv over pip/venv, stated across multiple projects.
+
+Mentions a literal </script> tag too, which must not break index.html.
 """)
         write(patterns / "observed-one.md", """---
 name: observed-one
@@ -123,13 +130,23 @@ Mentions a literal </script> tag in prose, which must not break index.html.
         assert {p["name"] for p in index_json} == {
             "proven-one", "observed-one", "scoped-elsewhere", "override-one", "script-breakout",
         }, "index.json should include every pattern regardless of state or project scope"
+        assert next(p for p in index_json if p["name"] == "proven-one")["cluster"] == "tooling", \
+            "cluster field should pass through to index.json"
 
         index_html = (Path(home) / "patterns" / "index.html").read_text()
         assert "__PATTERNITY_DATA__" not in index_html, "template placeholder was not substituted"
+        assert "__PATTERNITY_PROFILE__" not in index_html, "profile placeholder was not substituted"
         assert "observed-one" in index_html, "embedded data missing from index.html"
-        data_tag_content = index_html.split('id="patternity-data"', 1)[1].split(">", 1)[1].split("</script>", 1)[0]
-        assert "</script>" not in data_tag_content, "a literal </script> in pattern body must not close the data tag early"
-        assert "\\u003c/script" in data_tag_content, "pattern body's </script> should be escaped, not passed through raw"
+        assert "You default to uv" in index_html, "PROFILE.md content missing from index.html"
+
+        def tag_content(tag_id: str) -> str:
+            return index_html.split(f'id="{tag_id}"', 1)[1].split(">", 1)[1].split("</script>", 1)[0]
+
+        for tag_id in ("patternity-data", "patternity-profile"):
+            content = tag_content(tag_id)
+            assert "</script>" not in content, f"a literal </script> in source text must not close {tag_id} early"
+        assert "\\u003c/script" in tag_content("patternity-data"), "pattern body's </script> should be escaped"
+        assert "\\u003c/script" in tag_content("patternity-profile"), "PROFILE.md's </script> should be escaped"
 
         # idempotency: compiling twice must not duplicate the marked section
         compile_mod.main()

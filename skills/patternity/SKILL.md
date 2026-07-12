@@ -4,14 +4,15 @@ description: >
   Distills captured session signal (.patternity/signal.jsonl, from the Stop/
   prompt-submit hooks and git-history mining) into a personal, cross-project
   pattern store at ${PATTERNITY_HOME:-~/.patternity}/patterns/, promotes
-  patterns through observed -> suspect -> proven as they recur, and compiles
-  proven ones into CLAUDE.md/AGENTS.md/.cursor/.github instructions right
-  away. Use when the user says "patternity", "/patternity-distill", "learn my
-  patterns", "distill patterns", or asks what patternity has observed/proven.
-  Also use proactively at the start of a session if .patternity/signal.jsonl
-  has grown substantially since the walking doc was last updated. Do NOT use
-  for one-off requests already stated explicitly — this is for signal that
-  was never said explicitly.
+  patterns through observed -> suspect -> proven as they recur, clusters them
+  into a synthesized PROFILE.md, and compiles proven ones into
+  CLAUDE.md/AGENTS.md/.cursor/.github instructions right away. Use when the
+  user says "patternity", "/patternity-distill", "learn my patterns",
+  "distill patterns", or asks what patternity has observed/proven/learned
+  about them. Also use proactively at the start of a session if
+  .patternity/signal.jsonl has grown substantially since the walking doc was
+  last updated. Do NOT use for one-off requests already stated explicitly —
+  this is for signal that was never said explicitly.
 license: MIT
 ---
 
@@ -66,8 +67,15 @@ For each piece of signal:
 4. Use `applies_to.project` to scope narrowly (the observing project's name)
    until a pattern has shown up in more than one project — don't default a
    single-project observation to `project: "*"`.
-5. Rewrite `WALKING_DOC.md` to reflect the current state of every pattern.
-6. If `${PATTERNITY_HOME:-~/.patternity}` isn't a git repo yet, run
+5. Set/update `cluster` on the pattern: reuse an existing cluster name from
+   the store if the pattern fits one thematically, mint a new short one only
+   if nothing fits. This is what turns a pile of rules into a profile — see
+   "Clustering into a profile" in `patterns/_SCHEMA.md`.
+6. Rewrite `WALKING_DOC.md` to reflect the current state of every pattern,
+   and `PROFILE.md` to reflect the current clusters (group proven patterns
+   under a `## <cluster>` heading each, with a sentence or two of synthesis,
+   not just a re-listing of pattern bullets).
+7. If `${PATTERNITY_HOME:-~/.patternity}` isn't a git repo yet, run
    `<patternity-repo>/scripts/init_store.sh` once (idempotent, safe to call
    every time). Then commit the change there: `git -C "${PATTERNITY_HOME:-$HOME/.patternity}" add -A && git -C "${PATTERNITY_HOME:-$HOME/.patternity}" commit -m "<name>: <observed|suspect|proven> (n=<occurrences>)"`.
    Local commit only — never push, that's a separate, user-initiated step

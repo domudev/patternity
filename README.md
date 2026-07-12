@@ -118,9 +118,12 @@ gh repo create <you>/patterns --private --source ~/.patternity --remote origin -
 
 Every `compile.py` run also regenerates
 `${PATTERNITY_HOME:-~/.patternity}/patterns/index.html` — a Kanban-style
-board (Observed | Suspect | Proven) of every pattern in the store, at every
-state, across every project. It's a single self-contained file with the
-data embedded inline (no server, no fetch/CORS issue — just open it):
+board (Noticed | Recurring | Adopted — display labels only, the underlying
+`state` values are still `observed`/`suspect`/`proven`) of every pattern in
+the store, at every state, across every project. It's a single
+self-contained file with the data embedded inline (no server, no
+fetch/CORS issue — just open it), searchable, and paginated per column so
+it doesn't turn into a wall of cards:
 
 ```bash
 open ~/.patternity/patterns/index.html   # macOS; xdg-open on Linux
@@ -128,10 +131,18 @@ open ~/.patternity/patterns/index.html   # macOS; xdg-open on Linux
 
 `index.json` next to it is the same data in plain structured form, for
 anything else you want to build on top (a CLI summary, a different view).
-State is encoded as one hue at three lightness steps (a progression, not a
-category); `type: override` patterns get a small warning badge instead of a
-recolored card, since it's a different variable. Occurrence count shows as
-three small dots, filled up to the pattern's count.
+Each state gets its own pastel wash (slate → amber → green) rather than one
+hue at different lightness, so the board reads at a glance instead of
+requiring you to compare shades; `type: override` patterns get a small badge
+instead of a recolored card, since it's a different variable. Occurrence
+count shows as three small dots, filled up to the pattern's count.
+
+If `${PATTERNITY_HOME:-~/.patternity}/patterns/PROFILE.md` exists, it's
+rendered as a summary panel above the board — the skill's synthesis of
+proven patterns grouped by `cluster` (tooling, code-style, workflow, ...),
+e.g. "you default to uv over pip/venv, stated across multiple projects".
+That's the "who is this user" digest; the board underneath stays the
+detailed ledger.
 
 ## Fine-grained scoping
 

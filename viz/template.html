@@ -4,20 +4,23 @@
 <meta charset="utf-8">
 <title>patternity</title>
 <style>
-  /* one hue, three lightness steps — a progression, not a category. pastel
-     wash (~10% opacity) as the card background, per the "area fill" spec:
-     a wash, never a saturated block. text stays in ink tokens throughout;
-     the tint is the only thing carrying state. display labels (Noticed /
-     Recurring / Adopted) are cosmetic only — the underlying `state` values
-     (observed/suspect/proven) are unchanged, see patterns/_SCHEMA.md. */
+  /* three distinct pastel hues, one per state — a small fixed scale with
+     reserved meaning (not-yet-sure -> warming up -> confirmed), each still a
+     wash rather than a saturated block, per the "area fill" spec. text stays
+     in ink tokens throughout; the tint is the only thing carrying state.
+     display labels (Noticed / Recurring / Adopted) are cosmetic only — the
+     underlying `state` values (observed/suspect/proven) are unchanged, see
+     patterns/_SCHEMA.md. Square corners everywhere except the dot marks. */
   :root {
     --page: #f9f9f7;
     --surface-1: #fcfcfb;
     --text-primary: #0b0b0b;
     --text-secondary: #52514e;
     --text-muted: #898781;
-    --border: rgba(11,11,11,0.08);
-    --hue: 214; /* blue */
+    --border: rgba(11,11,11,0.10);
+    --observed-bg: hsl(210 35% 94%);  /* pale slate-blue: just spotted */
+    --suspect-bg:  hsl(35 65% 90%);   /* pale amber: warming up */
+    --proven-bg:   hsl(140 40% 90%);  /* pale green: confirmed */
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -26,54 +29,82 @@
       --text-primary: #ffffff;
       --text-secondary: #c3c2b7;
       --text-muted: #898781;
-      --border: rgba(255,255,255,0.10);
+      --border: rgba(255,255,255,0.12);
+      /* dark "pastel" = desaturated + dark, not light+low-saturation (that
+         would wash out against a light page, not a dark one) — same hues,
+         re-stepped for the dark surface rather than reused as-is. */
+      --observed-bg: hsl(210 20% 18%);
+      --suspect-bg:  hsl(35 30% 20%);
+      --proven-bg:   hsl(140 22% 18%);
     }
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; border-radius: 0 !important; }
   body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--page); color: var(--text-primary); }
-  header { padding: 28px 32px 16px; }
+  header { padding: 28px 32px 16px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
   h1 { font-size: 17px; margin: 0 0 4px; font-weight: 600; }
   .sub { color: var(--text-secondary); font-size: 13px; margin: 0; }
-  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 0 32px 32px; }
+  .search { border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary); padding: 7px 10px; font-size: 13px; min-width: 220px; font-family: inherit; }
+  .search:focus { outline: 2px solid var(--text-muted); outline-offset: -1px; }
+  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 0 32px 32px; align-items: start; }
   @media (max-width: 720px) { .board { grid-template-columns: 1fr; } }
+  .col { border-top: 2px solid var(--border); padding-top: 12px; }
   .col h2 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 0 0 12px; }
   .col h2 .n { color: var(--text-muted); font-weight: 400; }
-  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
-  .card.observed { background: hsl(var(--hue) 70% 96%); }
-  .card.suspect { background: hsl(var(--hue) 65% 92%); }
-  .card.proven { background: hsl(var(--hue) 55% 88%); }
-  @media (prefers-color-scheme: dark) {
-    .card.observed { background: hsl(var(--hue) 30% 16%); }
-    .card.suspect { background: hsl(var(--hue) 35% 19%); }
-    .card.proven { background: hsl(var(--hue) 40% 23%); }
-  }
+  .card { background: var(--surface-1); border: 1px solid var(--border); padding: 14px 16px; margin-bottom: 8px; }
+  .card.observed { background: var(--observed-bg); }
+  .card.suspect { background: var(--suspect-bg); }
+  .card.proven { background: var(--proven-bg); }
   .card .name { font-weight: 600; font-size: 14px; }
+  .card .tag { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; margin-left: 6px; }
   .card .why { font-size: 12.5px; color: var(--text-secondary); margin-top: 6px; line-height: 1.4; }
   .card .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
   .card .scope { font-size: 11px; color: var(--text-muted); }
   .dots { display: flex; gap: 3px; }
-  .dots .p { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); opacity: .35; }
+  .dots .p { width: 6px; height: 6px; border-radius: 50% !important; background: var(--text-muted); opacity: .35; }
   .dots .p.on { opacity: 1; }
-  .badge { font-size: 10.5px; padding: 2px 6px; border-radius: 4px; background: rgba(250,178,25,0.18); color: var(--text-primary); }
+  .badge { font-size: 10.5px; padding: 2px 6px; background: rgba(250,178,25,0.22); color: var(--text-primary); }
   .empty { color: var(--text-muted); font-size: 12px; font-style: italic; }
+  .more { display: block; width: 100%; margin-top: 4px; padding: 8px; border: 1px dashed var(--border); background: none; color: var(--text-secondary); font-size: 12px; font-family: inherit; cursor: pointer; }
+  .more:hover { background: var(--surface-1); }
+  .profile { margin: 0 32px 8px; padding: 16px 20px; border: 1px solid var(--border); background: var(--surface-1); }
+  .profile h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin: 14px 0 4px; }
+  .profile h3:first-child { margin-top: 0; }
+  .profile p, .profile li { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 2px 0; }
+  .profile ul { margin: 4px 0; padding-left: 18px; }
 </style>
 </head>
 <body>
 <header>
-  <h1>patternity</h1>
-  <p class="sub">what it's noticed about how you work, from first sighting to something it now assumes.</p>
+  <div>
+    <h1>patternity</h1>
+    <p class="sub">what it's noticed about how you work, from first sighting to something it now assumes.</p>
+  </div>
+  <input class="search" id="search" type="search" placeholder="search patterns…" autocomplete="off">
 </header>
+<div class="profile" id="profile" hidden></div>
 <div class="board" id="board">
   <div class="col" data-state="observed"><h2>Noticed <span class="n"></span></h2><div class="cards"></div></div>
   <div class="col" data-state="suspect"><h2>Recurring <span class="n"></span></h2><div class="cards"></div></div>
   <div class="col" data-state="proven"><h2>Adopted <span class="n"></span></h2><div class="cards"></div></div>
 </div>
 <script id="patternity-data" type="application/json">/*__PATTERNITY_DATA__*/</script>
+<script id="patternity-profile" type="application/json">/*__PATTERNITY_PROFILE__*/</script>
 <script>
   const DATA = JSON.parse(document.getElementById('patternity-data').textContent || '[]');
+  const PROFILE_MD = JSON.parse(document.getElementById('patternity-profile').textContent || '""');
+  const PAGE_SIZE = 6;
+  const shown = { observed: PAGE_SIZE, suspect: PAGE_SIZE, proven: PAGE_SIZE };
+  let query = '';
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function matches(p, q) {
+    if (!q) return true;
+    const at = p.applies_to || {};
+    const haystack = [p.name, p.body, p.type, p.cluster, at.tool, at.project].filter(Boolean).join(' ').toLowerCase();
+    return haystack.includes(q);
   }
 
   function card(p) {
@@ -83,8 +114,9 @@
     const scope = [at.tool, at.project].filter(x => x && x !== '*').join(' · ') || 'everywhere';
     const badge = p.type === 'override' ? '<span class="badge">overrides another rule</span>' : '';
     const why = (p.body || '').split('\n').find(l => l.trim()) || '';
+    const tag = p.cluster ? `<span class="tag">${escapeHtml(p.cluster)}</span>` : '';
     return `<div class="card ${p.state}">
-      <div class="name">${escapeHtml(p.name)}</div>
+      <div class="name">${escapeHtml(p.name)}${tag}</div>
       <div class="why">${escapeHtml(why)}</div>
       <div class="foot">
         <span class="scope">${escapeHtml(scope)}</span>
@@ -93,11 +125,57 @@
     </div>`;
   }
 
-  document.querySelectorAll('.col').forEach(col => {
-    const items = DATA.filter(p => p.state === col.dataset.state);
-    col.querySelector('h2 .n').textContent = items.length;
-    col.querySelector('.cards').innerHTML = items.length ? items.map(card).join('') : '<div class="empty">nothing here yet</div>';
+  function render() {
+    const q = query.trim().toLowerCase();
+    document.querySelectorAll('.col').forEach(col => {
+      const state = col.dataset.state;
+      const items = DATA.filter(p => p.state === state && matches(p, q));
+      col.querySelector('h2 .n').textContent = items.length;
+      const visible = items.slice(0, shown[state]);
+      const cardsHtml = visible.length ? visible.map(card).join('') : '<div class="empty">nothing here yet</div>';
+      const moreHtml = items.length > visible.length
+        ? `<button class="more" data-state="${state}">show ${Math.min(PAGE_SIZE, items.length - visible.length)} more (${items.length - visible.length} left)</button>`
+        : '';
+      col.querySelector('.cards').innerHTML = cardsHtml + moreHtml;
+    });
+    document.querySelectorAll('.more').forEach(btn => {
+      btn.addEventListener('click', () => { shown[btn.dataset.state] += PAGE_SIZE; render(); });
+    });
+  }
+
+  document.getElementById('search').addEventListener('input', e => {
+    query = e.target.value;
+    Object.keys(shown).forEach(k => shown[k] = PAGE_SIZE);
+    render();
   });
+
+  // tiny markdown-ish renderer for PROFILE.md — the skill only ever writes
+  // "## heading" + "- bullet" + prose lines (see _SCHEMA.md), so this is
+  // deliberately not a general markdown parser, just enough for that shape.
+  function renderProfile(md) {
+    const panel = document.getElementById('profile');
+    const lines = (md || '').split('\n');
+    let html = '', inList = false;
+    for (const raw of lines) {
+      const line = raw.trim();
+      if (line.startsWith('## ')) {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += `<h3>${escapeHtml(line.slice(3))}</h3>`;
+      } else if (line.startsWith('- ')) {
+        if (!inList) { html += '<ul>'; inList = true; }
+        html += `<li>${escapeHtml(line.slice(2))}</li>`;
+      } else if (line) {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += `<p>${escapeHtml(line)}</p>`;
+      }
+    }
+    if (inList) html += '</ul>';
+    panel.innerHTML = html;
+    panel.hidden = !html;
+  }
+
+  renderProfile(PROFILE_MD);
+  render();
 </script>
 </body>
 </html>

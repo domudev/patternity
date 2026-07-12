@@ -50,5 +50,5 @@ def load_all() -> list[dict]:
     return [
         parse_pattern(path)
         for path in sorted(directory.glob("*.md"))
-        if not path.name.startswith("_") and path.name != "WALKING_DOC.md"
+        if not path.name.startswith("_") and path.name not in ("WALKING_DOC.md", "PROFILE.md")
     ]
