@@ -31,7 +31,15 @@ from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _lib import ensure_store, git_author, load_all, parse_pattern, patterns_dir, set_field  # noqa: E402
+from _lib import ensure_store, git_author, load_all, parse_pattern, patterns_dir, repo_patterns_dir, set_field  # noqa: E402
+
+
+def resolve_path(name: str) -> Path | None:
+    """Locate a pattern file across both tiers (repo takes precedence)."""
+    for directory in (repo_patterns_dir(), patterns_dir()):
+        if directory and (directory / f"{name}.md").exists():
+            return directory / f"{name}.md"
+    return None
 
 LADDER = [(3, "adopted"), (2, "recurring"), (0, "noticed")]  # occurrences -> state
 
@@ -90,11 +98,16 @@ def cmd_search(args) -> int:
 
 
 def cmd_get(args) -> int:
-    path = patterns_dir() / f"{args.name}.md"
-    if not path.exists():
+    # search both tiers (repo takes precedence, same as load_all)
+    p = next((x for x in load_all() if x["name"] == args.name), None)
+    if p is None:
         print(f"no such pattern: {args.name}", file=sys.stderr)
         return 1
-    print(json.dumps(parse_pattern(path), indent=2) if args.json else path.read_text())
+    if args.json:
+        print(json.dumps(p, indent=2))
+    else:
+        tier_dir = repo_patterns_dir() if p.get("tier") == "repo" else patterns_dir()
+        print((tier_dir / f"{args.name}.md").read_text())
     return 0
 
 
@@ -104,17 +117,29 @@ def cmd_list(args) -> int:
         pats = [p for p in pats if p.get("state") == args.state]
     if args.cluster:
         pats = [p for p in pats if p.get("cluster") == args.cluster]
+    if args.tier:
+        pats = [p for p in pats if p.get("tier") == args.tier]
     if args.json:
-        print(json.dumps([{k: p.get(k, "") for k in ("name", "state", "cluster", "decision", "occurrences", "type")} for p in pats], indent=2))
+        print(json.dumps([{k: p.get(k, "") for k in ("name", "tier", "state", "cluster", "decision", "occurrences", "type")} for p in pats], indent=2))
     else:
         for p in pats:
-            print(f"{p.get('state',''):9} {p.get('cluster',''):14} {p['name']}")
+            print(f"{p.get('tier',''):5} {p.get('state',''):9} {p.get('cluster',''):14} {p['name']}")
     return 0
 
 
 def cmd_add(args) -> int:
-    ensure_store()
-    path = patterns_dir() / f"{args.name}.md"
+    # --repo targets the committed team store (<git-root>/.patternity/patterns);
+    # default is the personal per-user store.
+    if args.repo:
+        directory = repo_patterns_dir()
+        if directory is None:
+            print("--repo needs a git repo (no git root found here)", file=sys.stderr)
+            return 1
+        directory.mkdir(parents=True, exist_ok=True)
+    else:
+        ensure_store()
+        directory = patterns_dir()
+    path = directory / f"{args.name}.md"
     if path.exists():
         print(f"already exists: {args.name} (use `set`/`bump` to edit)", file=sys.stderr)
         return 1
@@ -128,13 +153,13 @@ def cmd_add(args) -> int:
         *(["target: null"] if args.type == "override" else []),
     ]
     path.write_text("---\n" + "\n".join(fm) + "\n---\n\n" + body + "\n")
-    print(f"added {args.name} (noticed, agent={agent}, author={git_author()})")
+    print(f"added {args.name} to {'repo' if args.repo else 'user'} store (noticed, agent={agent}, author={git_author()})")
     return 0
 
 
 def cmd_set(args) -> int:
-    path = patterns_dir() / f"{args.name}.md"
-    if not path.exists():
+    path = resolve_path(args.name)
+    if path is None:
         print(f"no such pattern: {args.name}", file=sys.stderr)
         return 1
     if not args.clear and args.value is None:
@@ -146,8 +171,8 @@ def cmd_set(args) -> int:
 
 
 def cmd_bump(args) -> int:
-    path = patterns_dir() / f"{args.name}.md"
-    if not path.exists():
+    path = resolve_path(args.name)
+    if path is None:
         print(f"no such pattern: {args.name}", file=sys.stderr)
         return 1
     p = parse_pattern(path)
@@ -177,8 +202,8 @@ def main(argv: list[str]) -> int:
 
     s = sub.add_parser("search"); s.add_argument("query"); s.add_argument("--regex", action="store_true"); s.add_argument("--limit", type=int, default=10); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_search)
     g = sub.add_parser("get"); g.add_argument("name"); g.add_argument("--json", action="store_true"); g.set_defaults(fn=cmd_get)
-    ls = sub.add_parser("list"); ls.add_argument("--state"); ls.add_argument("--cluster"); ls.add_argument("--json", action="store_true"); ls.set_defaults(fn=cmd_list)
-    a = sub.add_parser("add"); a.add_argument("name"); a.add_argument("--type", default="feedback"); a.add_argument("--cluster"); a.add_argument("--tool", default="*"); a.add_argument("--project", default="*"); a.add_argument("--agent"); a.add_argument("--body"); a.set_defaults(fn=cmd_add)
+    ls = sub.add_parser("list"); ls.add_argument("--state"); ls.add_argument("--cluster"); ls.add_argument("--tier", choices=["user", "repo"]); ls.add_argument("--json", action="store_true"); ls.set_defaults(fn=cmd_list)
+    a = sub.add_parser("add"); a.add_argument("name"); a.add_argument("--type", default="feedback"); a.add_argument("--cluster"); a.add_argument("--tool", default="*"); a.add_argument("--project", default="*"); a.add_argument("--agent"); a.add_argument("--body"); a.add_argument("--repo", action="store_true", help="write to the committed per-repo store instead of the personal one"); a.set_defaults(fn=cmd_add)
     st = sub.add_parser("set"); st.add_argument("name"); st.add_argument("field"); st.add_argument("value", nargs="?"); st.add_argument("--clear", action="store_true"); st.set_defaults(fn=cmd_set)
     b = sub.add_parser("bump"); b.add_argument("name"); b.set_defaults(fn=cmd_bump)
     d = sub.add_parser("dashboard"); d.set_defaults(fn=cmd_dashboard)

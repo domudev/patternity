@@ -8,8 +8,22 @@ from pathlib import Path
 
 
 def patterns_dir() -> Path:
+    """The per-USER store: personal, global, follows you across repos."""
     home = os.environ.get("PATTERNITY_HOME", str(Path.home() / ".patternity"))
     return Path(home) / "patterns"
+
+
+def repo_patterns_dir() -> Path | None:
+    """The per-REPO store: team/project conventions committed with the code,
+    at <git-root>/.patternity/patterns/. None when not inside a git repo.
+    (Signal lives at <git-root>/.patternity/signal.jsonl and stays gitignored;
+    only patterns/ is meant to be committed — see README.)"""
+    try:
+        root = subprocess.run(["git", "rev-parse", "--show-toplevel"], check=False,
+                              capture_output=True, text=True, timeout=5).stdout.strip()
+    except Exception:
+        root = ""
+    return Path(root) / ".patternity" / "patterns" if root else None
 
 
 def git_author() -> str:
@@ -112,14 +126,24 @@ def set_field(path: Path, key: str, value: str | None) -> None:
     path.write_text("---" + "\n".join(lines) + "---" + body)
 
 
-def load_all() -> list[dict]:
-    """Every pattern in the store, any state — for the visualization, which
-    shows the whole personal store rather than one project's compiled slice."""
-    directory = patterns_dir()
-    if not directory.exists():
+def _load_dir(directory: Path | None, tier: str) -> list[dict]:
+    if not directory or not directory.exists():
         return []
-    return [
-        parse_pattern(path)
-        for path in sorted(directory.glob("*.md"))
-        if not path.name.startswith("_") and path.name not in ("WALKING_DOC.md", "PROFILE.md")
-    ]
+    out = []
+    for path in sorted(directory.glob("*.md")):
+        if path.name.startswith("_") or path.name in ("WALKING_DOC.md", "PROFILE.md"):
+            continue
+        p = parse_pattern(path)
+        p["tier"] = tier  # "user" (personal) or "repo" (team, committed) — derived from location
+        out.append(p)
+    return out
+
+
+def load_all() -> list[dict]:
+    """Every pattern relevant here: the per-repo store (team) merged over the
+    per-user store (personal). Repo wins on a name clash — a repo can override
+    a personal default. Each dict carries its `tier`."""
+    repo = _load_dir(repo_patterns_dir(), "repo")
+    repo_names = {p["name"] for p in repo}
+    user = [p for p in _load_dir(patterns_dir(), "user") if p["name"] not in repo_names]
+    return repo + user

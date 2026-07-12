@@ -55,7 +55,11 @@ def is_effective_adopted(p: dict) -> bool:
 def load_adopted(project: str) -> tuple[list[dict], list[dict]]:
     additive, overrides = [], []
     for p in load_all():
-        if not is_effective_adopted(p) or not in_scope(p, project):
+        # repo-tier patterns belong to this repo → always in scope; user-tier
+        # patterns are narrowed by applies_to.project.
+        if not is_effective_adopted(p):
+            continue
+        if p.get("tier") != "repo" and not in_scope(p, project):
             continue
         (overrides if p.get("type") == "override" else additive).append(p)
     return additive, overrides
@@ -159,7 +163,7 @@ def write_viz(all_patterns: list[dict]) -> list[Path]:
     index.html (the same data + PROFILE.md embedded, so it opens via file://
     with no server and no fetch/CORS gotcha)."""
     slim = [
-        {k: p.get(k, "") for k in ("name", "type", "state", "occurrences", "cluster", "decision", "agent", "author", "applies_to", "target", "body")}
+        {k: p.get(k, "") for k in ("name", "type", "state", "occurrences", "cluster", "decision", "agent", "author", "tier", "applies_to", "target", "body")}
         for p in all_patterns
     ]
     json_path = patterns_dir() / "index.json"

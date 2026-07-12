@@ -292,6 +292,7 @@
     const badge = p.type === 'override' ? '<span class="badge">override</span>' : '';
     const why = (p.body || '').split('\n').find(l => l.trim()) || '';
     const tag = p.cluster ? `<span class="chip cluster">${escapeHtml(p.cluster)}</span>` : '';
+    const tierTag = p.tier === 'repo' ? '<span class="chip" title="team / committed repo store">repo</span>' : '';
     const d = effDecision(p);
     const decCls = d ? ` dec-${d}` : '';
     return `<div class="card ${p.state}${decCls}" data-index="${index}" tabindex="0" style="animation-delay:${delayStep * 35}ms">
@@ -299,7 +300,7 @@
         <button class="act${d === 'accepted' ? ' on-accept' : ''}" data-act="accept" data-index="${index}" title="accept (pin to Adopted)" aria-label="accept">✓</button>
         <button class="act${d === 'rejected' ? ' on-reject' : ''}" data-act="reject" data-index="${index}" title="reject (tombstone)" aria-label="reject">✕</button>
       </div>
-      <div class="top"><span class="name">${escapeHtml(p.name)}</span>${tag}</div>
+      <div class="top"><span class="name">${escapeHtml(p.name)}</span>${tag}${tierTag}</div>
       <div class="why">${escapeHtml(why)}</div>
       <div class="foot"><span class="scope">${escapeHtml(scope)}</span>${badge || `<span class="dots">${dots}</span>`}</div>
     </div>`;

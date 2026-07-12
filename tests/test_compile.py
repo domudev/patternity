@@ -140,7 +140,29 @@ Mentions a literal </script> tag in prose, which must not break index.html.
         os.chdir(project_dir)
         write(project_dir / "CLAUDE.md", "# Project\n\nAlways use tabs, never spaces.\n")
 
+        # per-repo (team) store: make the project a git repo and drop a repo
+        # pattern scoped to a *different* project — it must still compile here,
+        # because repo-tier patterns belong to this repo regardless of scope.
+        import subprocess
+        subprocess.run(["git", "init", "-q"], cwd=project_dir, check=False)
+        write(project_dir / ".patternity" / "patterns" / "team-convention.md", """---
+name: team-convention
+type: project
+state: adopted
+occurrences: 9
+applies_to:
+  tool: "*"
+  glob: "**/*"
+  project: some-other-repo
+---
+
+Team rule that lives in the repo store.
+""")
+
         compile_mod.main()
+
+        agents_repo = Path("AGENTS.md").read_text()
+        assert "Team rule that lives in the repo store" in agents_repo, "repo-tier pattern must compile regardless of project scope"
 
         agents = Path("AGENTS.md").read_text()
         assert "Use uv for python scripts" in agents, "adopted pattern missing from AGENTS.md"
@@ -161,12 +183,14 @@ Mentions a literal </script> tag in prose, which must not break index.html.
         index_json = json.loads((Path(home) / "patterns" / "index.json").read_text())
         assert {p["name"] for p in index_json} == {
             "adopted-one", "noticed-one", "scoped-elsewhere", "override-one", "script-breakout",
-            "accepted-noticed", "rejected-adopted",
-        }, "index.json should include every pattern regardless of state, decision, or project scope"
+            "accepted-noticed", "rejected-adopted", "team-convention",
+        }, "index.json should include every pattern (both tiers) regardless of state/decision/scope"
         assert next(p for p in index_json if p["name"] == "adopted-one")["cluster"] == "tooling", \
             "cluster field should pass through to index.json"
         assert next(p for p in index_json if p["name"] == "rejected-adopted")["decision"] == "rejected", \
             "decision field should pass through to index.json"
+        assert next(p for p in index_json if p["name"] == "team-convention")["tier"] == "repo", \
+            "repo-tier patterns should be tagged tier=repo"
 
         index_html = (Path(home) / "patterns" / "index.html").read_text()
         assert "__PATTERNITY_DATA__" not in index_html, "template placeholder was not substituted"
